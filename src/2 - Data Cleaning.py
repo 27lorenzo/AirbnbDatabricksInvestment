@@ -24,9 +24,10 @@ for column_name in columns_to_transform:
 columns_to_fill = ["registrationCost", "additionalCostsRaw", "rent"]
 
 for column_name in columns_to_fill:
-    df_kamernet_ids = df_kamernet_ids.na.fill(0, subset=[column_name])
+    df_kamernet_cleaned = df_kamernet_ids.na.fill(0.0, subset=[column_name])
     
-df_kamernet_ids.show(1, truncate=False, vertical=True)
+df_kamernet_cleaned.show(1, truncate=False, vertical=True)
+df_kamernet_cleaned.write.mode("overwrite").parquet("/tmp/df_kamernet_cleaned.parquet")
 
 # COMMAND ----------
 
@@ -54,23 +55,23 @@ def get_postal_code(latitude, longitude):
 
 # COMMAND ----------
 
-from pyspark.sql import Window
-list_group_features = ["zipcode"]
-window_spec = Window.partitionBy(list_group_features)
-
-
-# COMMAND ----------
+# Calculate new postal code from API if: zipcode is null, empty, only 4 numbers without letters or it is one of the outliers ("b", "0")
+# Extract postal code through reg_expression in "1079 HH Amsterdam" and "Nederland 1091 TS" cases
 
 get_postal_code_udf = spark.udf.register("get_postal_code", get_postal_code, StringType())
 
-reg_expression = r'\b(\d{4}\s*[A-Z0-9]+)\b'
+reg_expression_1 = r'\b(\d{4}\s*[A-Z0-9]+)\b'
+reg_expression_2 = r'\b(\d{4}\s*[A-Z]{2})\b'
+
+outliers_list_1 = ["1079 HH Amsterdam", "1016 BL Amsterdam", "1056 LD Amsterdam"]
+outliers_list_2 = ["Nederland 1091 TS"]
 
 df_airbnb_filled = df_airbnb.withColumn(
     "zipcode",
     when((col("zipcode").isNull()) | (col("zipcode") == ""), get_postal_code_udf(col("latitude"), col("longitude")))
-    .when((col("zipcode") == "b") | (col("zipcode") == "0"), get_postal_code_udf(col("latitude"), col("longitude")))
-    .when((col("zipcode") == "1079 HH Amsterdam"), regexp_extract(col("zipcode"), reg_expression, 1))
-    .when((col("zipcode") == "Nederland 1091 TS"), regexp_extract(col("zipcode"), reg_expression, 1))
+    .when((col("zipcode") == "b") | (col("zipcode") == "0") | (col("zipcode") == "342HUIS"), get_postal_code_udf(col("latitude"), col("longitude")))
+    .when(col("zipcode").isin(outliers_list_1), regexp_extract(col("zipcode"), reg_expression_1, 1))
+    .when(col("zipcode").isin(outliers_list_2), regexp_extract(col("zipcode"), reg_expression_2, 1))
     .when(col("zipcode").rlike("^\\d{4}$"), get_postal_code_udf(col("latitude"), col("longitude")))
     .otherwise(col("zipcode"))
 )
@@ -87,13 +88,7 @@ df_airbnb_cleaned.show()
 
 # COMMAND ----------
 
-# Check if there are rows with more than 6 characters (1111AA)
-outlier_rows = df_airbnb.filter(length(col("zipcode")) > 6)
-outlier_rows.show()
-
-# COMMAND ----------
-
-df_kamernet_selected_cols = df_kamernet_ids.select(
+df_kamernet_selected_cols = df_kamernet_cleaned.select(
     "postalCode",
     "areaSqm",
     "matchCapacity",
@@ -110,6 +105,7 @@ df_airbnb_selected_cols = df_airbnb_cleaned.select(
     "price",
     "review_scores_value"
 )
+
 df_kamernet_selected_cols.show()
 df_kamernet_selected_cols.write.mode("overwrite").parquet("/tmp/df_kamernet_selected_cols.parquet")
 

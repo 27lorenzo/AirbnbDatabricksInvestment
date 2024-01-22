@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 df_kamernet_selected_cols = spark.read.parquet("/tmp/df_kamernet_selected_cols.parquet")
 df_airbnb_filtered = spark.read.parquet("/tmp/df_airbnb_filtered.parquet")
 
+columns_to_check = ["registrationCost", "additionalCostsRaw", "rent"]
+for column_name in columns_to_check:
+    df_nulls = df_kamernet_selected_cols.filter(col(column_name).isNull())
+    df_nulls.show()
+
 
 # COMMAND ----------
 
@@ -55,36 +60,27 @@ df_final.show()
 
 # COMMAND ----------
 
-import matplotlib.pyplot as plt
-
-# Ordenar el DataFrame por avg_kamernet_income en orden descendente
+# Sort dataframe by avg_kamernet_income
 df_kamernet_sorted = df_final.orderBy("avg_kamernet_income", ascending=False).limit(20).toPandas()
 
-# Crear un gráfico de barras horizontal para avg_kamernet_income
 fig, axs = plt.subplots(1, 2, figsize=(15, 6))
 
-# Gráfico para avg_kamernet_income
 bars1 = axs[0].barh(df_kamernet_sorted['postalCode'], df_kamernet_sorted['avg_kamernet_income'], label='Avg Kamernet Income')
 bars2 = axs[0].barh(df_kamernet_sorted['postalCode'], df_kamernet_sorted['avg_airbnb_income'], label='Avg Airbnb Income', alpha=0.7)
 
-# Añadir etiquetas y leyenda
 axs[0].set_xlabel('Income')
 axs[0].set_title('Top 20 Postal Codes by Avg Kamernet Income')
 axs[0].legend()
 
-# Ordenar el DataFrame por avg_airbnb_income en orden descendente
 df_airbnb_sorted = df_final.orderBy("avg_airbnb_income", ascending=False).limit(20).toPandas()
 
-# Gráfico para avg_airbnb_income
 bars3 = axs[1].barh(df_airbnb_sorted['postalCode'], df_airbnb_sorted['avg_kamernet_income'], label='Avg Kamernet Income')
 bars4 = axs[1].barh(df_airbnb_sorted['postalCode'], df_airbnb_sorted['avg_airbnb_income'], label='Avg Airbnb Income', alpha=0.7)
 
-# Añadir etiquetas y leyenda
 axs[1].set_xlabel('Income')
 axs[1].set_title('Top 20 Postal Codes by Avg Airbnb Income')
 axs[1].legend()
 
-# Ajustar el diseño
 plt.tight_layout()
 plt.show()
 

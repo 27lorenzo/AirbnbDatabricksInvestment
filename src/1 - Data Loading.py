@@ -16,7 +16,7 @@ s3_postcode_geojson = "/geo/post_codes.geojson"
 s3_ams_geojson = "/geo/amsterdam_areas.geojson"
 
 spark = SparkSession.builder \
-    .appName("MongoDBExample") \
+    .appName("SparkApp") \
     .config("spark.jars.packages", "org.mongodb.spark:mongo-spark-connector_2.12:3.0.1") \
     .config("spark.executor.memory", "6g") \
     .config("spark.executor.cores", "2") \
