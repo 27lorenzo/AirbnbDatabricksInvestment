@@ -35,7 +35,7 @@
 # MAGIC - zipcode field only contains 4 numbers without letters
 # MAGIC - zipcode field is one of the outliers "b" or "0"
 # MAGIC
-# MAGIC For the rows with zipcode as "1079 HH Amsterdam" and "Nederland 1091 TS", a regular expression is used to extract only the postal code. 
+# MAGIC For the rows with zipcode as "1079 HH Amsterdam", "1016 BL Amsterdam", "1056 BL Amsterdam" "Nederland 1091 TS", a regular expression is used to extract only the postal code. 
 # MAGIC
 # MAGIC To avoid future complications, I unified the postal code format by removing the space between numbers and letters (1111AA).
 # MAGIC

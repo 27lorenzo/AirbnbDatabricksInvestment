@@ -48,10 +48,9 @@ database = 'projects'
 collection = 'RevoData-assessment-rent-airbnb'
 connection_string = f"mongodb+srv://{mongodb_user}:{mongodb_pwd}@cluster0.ouy300o.mongodb.net/"
 
-"""
 df_kamernet_ids.write.format("mongo") \
     .option("spark.mongodb.output.uri", connection_string) \
     .option("spark.mongodb.output.database", database) \
     .option("collection",collection) \
     .mode("append").save()
-"""
+
